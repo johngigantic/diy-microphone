@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "DIY Microphone")(type "KiCad")(uri "${KIPRJMOD}/DIY Microphone.kicad_sym")(options "")(descr ""))
+)

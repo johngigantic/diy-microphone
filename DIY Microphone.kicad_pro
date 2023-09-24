@@ -232,7 +232,7 @@
       "no_connect_dangling": "warning",
       "pin_not_connected": "error",
       "pin_not_driven": "error",
-      "pin_to_pin": "warning",
+      "pin_to_pin": "error",
       "power_pin_not_driven": "error",
       "similar_labels": "warning",
       "simulation_model_issue": "error",
@@ -322,6 +322,15 @@
     "subpart_first_id": 65,
     "subpart_id_separator": 0
   },
-  "sheets": [],
+  "sheets": [
+    [
+      "f66cd40b-9baa-4e00-9045-a7ef91c01d0b",
+      ""
+    ],
+    [
+      "c8106f1c-54bf-4372-8e79-82fa42e86634",
+      "Audio"
+    ]
+  ],
   "text_variables": {}
 }

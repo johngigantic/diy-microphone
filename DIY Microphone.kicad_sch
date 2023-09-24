@@ -1,5 +1,42 @@
 (kicad_sch (version 20230121) (generator eeschema)
+
+  (uuid f66cd40b-9baa-4e00-9045-a7ef91c01d0b)
+
   (paper "A4")
-  (lib_symbols)
-  (symbol_instances)
+
+  (title_block
+    (title "USB Microphone")
+    (date "2023-09-21")
+    (rev "0.1")
+    (company "John Little")
+  )
+
+  (lib_symbols
+  )
+
+
+  (sheet (at 96.52 92.71) (size 35.56 29.21) (fields_autoplaced)
+    (stroke (width 0.1524) (type solid))
+    (fill (color 0 0 0 0.0000))
+    (uuid c8106f1c-54bf-4372-8e79-82fa42e86634)
+    (property "Sheetname" "Audio" (at 96.52 91.9984 0)
+      (effects (font (size 1.27 1.27)) (justify left bottom))
+    )
+    (property "Sheetfile" "audio.kicad_sch" (at 96.52 122.5046 0)
+      (effects (font (size 1.27 1.27)) (justify left top))
+    )
+    (pin "Audio Out" input (at 132.08 120.65 0)
+      (effects (font (size 1.27 1.27)) (justify right))
+      (uuid 1f1f9294-6c31-4f0f-bea4-85f8aacfcbb0)
+    )
+    (instances
+      (project "DIY Microphone"
+        (path "/f66cd40b-9baa-4e00-9045-a7ef91c01d0b" (page "2"))
+      )
+    )
+  )
+
+  (sheet_instances
+    (path "/" (page "1"))
+  )
 )
