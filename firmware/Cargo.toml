@@ -18,9 +18,11 @@ publish = false
 panic-halt = "0.2"
 atsame54p = { version = "0.12" }
 atsamd-hal = { version = "0.16", default_features = false, features = ["same54p", "same54p-rt", "unproven", "dma"] }
+atsame54_xpro = { version = "0.6", features = ["usb"] }
 cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = { version = "0.7" }
 rtic = { version = "2.0", features = ["cortex-m", "thumbv7-backend"] }
+rtic-monotonics = { version = "1.2", features = ["cortex-m-systick"] }
 
 [dev-dependencies]
 panic-semihosting = "0.6.0"
