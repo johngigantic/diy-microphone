@@ -10,9 +10,10 @@ mod test;
 
 #[rtic::app(device=atsame54p, peripherals=true, dispatchers=[EVSYS_0])]
 mod app {
-    use atsame54_xpro as bsp;
     use crate::init::init;
     use crate::tasks::blink::blink;
+    use crate::tasks::stream::stream;
+    use atsame54_xpro as bsp;
 
     #[local]
     pub struct Local {
@@ -26,8 +27,11 @@ mod app {
         #[init]
         fn init(cx: init::Context) -> (Shared, Local);
 
-        #[task(local=[led], priority=1)]
+        #[task(local=[led], priority=2)]
         async fn blink(cx: blink::Context);
+
+        #[task(local=[], priority=2)]
+        async fn stream(cx: stream::Context);
     }
 
     #[idle]
