@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule: [cron: "30 3 * * *"]
+
+permissions:
+  contents: read
+
+env:
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  pre_ci:
+    uses: dtolnay/.github/.github/workflows/pre_ci.yml@master
+
+  test:
+    name: Tests
+    needs: pre_ci
+    if: needs.pre_ci.outputs.continue
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: llvm-tools, rustc-dev
+      - run: cargo test --all-features --release --tests
+
+  build:
+    name: ${{matrix.name || format('Rust {0}', matrix.rust)}}
+    needs: pre_ci
+    if: needs.pre_ci.outputs.continue
+    runs-on: ${{matrix.os || 'ubuntu'}}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [stable, beta, 1.65.0]
+        include:
+          - rust: nightly
+            components: rustc-dev
+          - rust: nightly
+            name: ARM64
+            target: aarch64-unknown-none
+          - rust: nightly
+            name: ThumbV7
+            target: thumbv7m-none-eabi
+          - rust: nightly
+            name: Windows
+            os: windows
+    env:
+      target: ${{matrix.target && format('--target={0}', matrix.target)}}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{matrix.rust}}
+          targets: ${{matrix.target}}
+          components: ${{matrix.components}}
+      - run: cargo check ${{env.target}} --no-default-features
+      - run: cargo check ${{env.target}}
+      - if: matrix.components == 'rustc-dev'
+        run: cargo check --benches --all-features --release
+
+  doc:
+    name: Documentation
+    needs: pre_ci
+    if: needs.pre_ci.outputs.continue
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      RUSTDOCFLAGS: -Dwarnings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo doc
+      - run: cargo test --all-features --doc
+
+  minimal:
+    name: Minimal versions
+    needs: pre_ci
+    if: needs.pre_ci.outputs.continue
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo generate-lockfile -Z minimal-versions
+      - run: cargo check --all-features --locked
+
+  miri:
+    name: Miri
+    needs: pre_ci
+    if: needs.pre_ci.outputs.continue
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@miri
+      - run: cargo miri setup
+      - run: cargo miri test --all-features
+        env:
+          MIRIFLAGS: -Zmiri-strict-provenance
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy,rustc-dev
+      - run: cargo clippy --all-features --tests --benches -- -Dclippy::all -Dclippy::pedantic
+
+  outdated:
+    name: Outdated
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/install@cargo-outdated
+      - run: cargo outdated --workspace --exit-code 1
