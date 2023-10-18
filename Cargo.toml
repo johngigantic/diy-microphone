@@ -1,3 +1,6 @@
 [workspace]
-members = ['firmware']
+members = [
+    "firmware/host-target-tests",
+]
+
 resolver = "2"
