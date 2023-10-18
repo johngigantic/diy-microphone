@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "firmware/host-target-tests",
+    "firmware/messaging",
 ]
 
 resolver = "2"

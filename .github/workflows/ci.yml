@@ -11,12 +11,13 @@ permissions:
 
 env:
   RUSTFLAGS: -Dwarnings
+  TARGET_WORKSPACE_FLAGS: --manifest-path firmware/cross/Cargo.toml --config firmware/cross/.cargo/config.toml
 
 jobs:
   pre_ci:
     uses: dtolnay/.github/.github/workflows/pre_ci.yml@master
 
-  test:
+  host-tests:
     name: Tests
     needs: pre_ci
     if: needs.pre_ci.outputs.continue
@@ -29,7 +30,40 @@ jobs:
           components: llvm-tools, rustc-dev
       - run: cargo test --all-features --release --tests
 
-  build:
+  build-target:
+    name: ${{matrix.name || format('Rust {0}', matrix.rust)}}
+    needs: pre_ci
+    if: needs.pre_ci.outputs.continue
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [stable, beta, 1.65.0]
+        include:
+          - rust: nightly
+            components: rustc-dev
+          - rust: nightly
+            name: ARM64
+            target: aarch64-unknown-none
+          - rust: nightly
+            name: ThumbV7
+            target: thumbv7m-none-eabihf
+    env:
+      target: ${{matrix.target && format('--target={0}', matrix.target)}}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{matrix.rust}}
+          targets: ${{matrix.target}}
+          components: ${{matrix.components}}
+      - run: cargo check ${{env.target}} ${{env.TARGET_WORKSPACE_FLAGS}} --no-default-features
+      - run: cargo check ${{env.target}} ${{env.TARGET_WORKSPACE_FLAGS}}
+      - if: matrix.components == 'rustc-dev'
+        run: cargo check --benches --all-features --release ${{env.TARGET_WORKSPACE_FLAGS}}
+
+  build-host:
     name: ${{matrix.name || format('Rust {0}', matrix.rust)}}
     needs: pre_ci
     if: needs.pre_ci.outputs.continue
@@ -44,9 +78,6 @@ jobs:
           - rust: nightly
             name: ARM64
             target: aarch64-unknown-none
-          - rust: nightly
-            name: ThumbV7
-            target: thumbv7m-none-eabi
           - rust: nightly
             name: Windows
             os: windows
@@ -77,9 +108,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo doc
+      - run: cargo doc ${{env.TARGET_WORKSPACE_FLAGS}}
       - run: cargo test --all-features --doc
+      - run: cargo test --all-features --doc ${{env.TARGET_WORKSPACE_FLAGS}}
 
-  minimal:
+  host-minimal:
     name: Minimal versions
     needs: pre_ci
     if: needs.pre_ci.outputs.continue
@@ -89,7 +122,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo generate-lockfile -Z minimal-versions
+      - run: cargo generate-lockfile -Z minimal-versions ${{env.TARGET_WORKSPACE_FLAGS}}
       - run: cargo check --all-features --locked
+      - run: cargo check --all-features --locked ${{env.TARGET_WORKSPACE_FLAGS}}
 
   miri:
     name: Miri
@@ -104,6 +139,7 @@ jobs:
       - run: cargo miri test --all-features
         env:
           MIRIFLAGS: -Zmiri-strict-provenance
+      - run: cargo miri test --all-features ${{env.TARGET_WORKSPACE_FLAGS}}
 
   clippy:
     name: Clippy
@@ -116,6 +152,8 @@ jobs:
         with:
           components: clippy,rustc-dev
       - run: cargo clippy --all-features --tests --benches -- -Dclippy::all -Dclippy::pedantic
+      - run: cargo clippy --all-features --tests --benches -- -Dclippy::all -Dclippy::pedantic ${{env.TARGET_WORKSPACE_FLAGS}}
+
 
   outdated:
     name: Outdated
@@ -126,3 +164,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/install@cargo-outdated
       - run: cargo outdated --workspace --exit-code 1
+      - run: cargo outdated --workspace --exit-code 1 ${{env.TARGET_WORKSPACE_FLAGS}}
