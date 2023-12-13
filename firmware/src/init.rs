@@ -6,17 +6,23 @@ use bsp::{
         clock::GenericClockController,
         pac::{CorePeripherals, Peripherals},
         usb::usb_device::class_prelude::*,
+        usb::usb_device::prelude::*,
     },
 };
 use usbd_audio::AudioClass;
 
 use crate::app::{blink, init, stream, Local, Shared};
 use rtic_monotonics::systick::*;
+use rtt_target::{rtt_init_print, rprintln};
 
 pub static mut USB_ALLOCATOR: Option<UsbBusAllocator<bsp::hal::usb::UsbBus>> = None;
 pub static mut USB_AUDIO: Option<AudioClass<bsp::hal::usb::UsbBus>> = None;
+pub static mut USB_DEVICE: Option<UsbDevice<bsp::hal::usb::UsbBus>> = None;
 
 pub fn init(cx: init::Context) -> (Shared, Local) {
+    rtt_init_print!();
+    rprintln!("Init!");
+
     let core: CorePeripherals = cx.core;
     let mut device: Peripherals = cx.device;
 
@@ -73,65 +79,22 @@ pub fn init(cx: init::Context) -> (Shared, Local) {
         );
     }
 
+    unsafe {
+        USB_DEVICE = Some(UsbDeviceBuilder::new(usb_allocator, UsbVidPid(0x16c0, 0x27dd))
+        .max_packet_size_0(64)
+        .manufacturer("John Little")
+        .product("Desktop Microphone")
+        .serial_number("42")
+        .max_power(500)
+        .device_class(0x10)
+        .device_sub_class(0x03)
+        .build());
+    }
+
+    rprintln!("Done initializing");
+
     blink::spawn().ok();
     stream::spawn().ok();
 
     (Shared {}, Local { led })
 }
-
-// fn setup_usb(
-//     usb: USB,
-//     clocks: &mut GenericClockController,
-//     mclk: &mut MCLK,
-//     dm: impl Into<bsp::UsbDm>,
-//     dp: impl Into<bsp::UsbDp>,
-// ) -> bsp::hal::usb::UsbBus {
-//     use bsp::hal::pac::gclk::{genctrl::SRC_A, pchctrl::GEN_A};
-
-//     clocks.configure_gclk_divider_and_source(GEN_A::GCLK2, 1, SRC_A::DFLL, false);
-//     let usb_gclk = clocks.get_gclk(GEN_A::GCLK2).unwrap();
-//     let usb_clock = &clocks.usb(&usb_gclk).unwrap();
-//     let (dm, dp) = (dm.into(), dp.into());
-//     bsp::hal::usb::UsbBus::new(usb_clock, mclk, dm, dp, usb)
-// }
-
-// usb_bus.alloc_ep(
-//     UsbDirection::Out,
-//     Some(EndpointAddress::from_parts(0, UsbDirection::Out)),
-//     EndpointType::Control,
-//     100,
-//     0,
-// );
-
-// usb_bus.alloc_ep(
-//     UsbDirection::In,
-//     Some(EndpointAddress::from_parts(1, UsbDirection::In)),
-//     EndpointType::Isochronous,
-//     1024,
-//     0,
-// );
-
-// usb_allocator.control::<endpoint::Out>(64);
-// let audio_endpoint = usb_allocator
-//     .alloc::<endpoint::In>(
-//         Some(EndpointAddress::from_parts(1, UsbDirection::In)),
-//         EndpointType::Isochronous,
-//         1024,
-//         255,
-//     )
-//     .unwrap();
-
-// let usb_audio_device = UsbDeviceBuilder::new(&usb_allocator, UsbVidPid(0x4200, 0x1234))
-//     .manufacturer("John Little")
-//     .product("USB Microphone")
-//     .serial_number("42")
-//     .max_power(500)
-//     .device_class(0x10)
-//     .device_sub_class(0x03)
-//     .build();
-
-// usb_audio_device.bus().enable();
-
-// let usb_bus = usb_audio_device.bus();
-
-// usb_bus.write(audio_endpoint.address(), &sin);

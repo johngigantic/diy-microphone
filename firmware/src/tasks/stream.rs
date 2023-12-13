@@ -3,6 +3,7 @@
 //! Outputs audio data once each millisecond
 
 use rtic_monotonics::systick::*;
+use rtt_target::rprintln;
 
 use crate::{app::stream, init::USB_AUDIO};
 
@@ -18,7 +19,8 @@ pub async fn stream(_cx: stream::Context<'_>) -> ! {
     loop {
         unsafe {
             if let Some(usb_audio) = USB_AUDIO.as_mut() {
-                let _ = usb_audio.write(sine_wave);
+                rprintln!("Sine!");
+                usb_audio.write(sine_wave).ok();
             };
         }
         Systick::delay(1000.millis()).await;
