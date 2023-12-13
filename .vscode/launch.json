@@ -25,6 +25,7 @@
             "svdFile": "./config/ATSAME54P20A.svd"
           }
         ],
+        "connectUnderReset": true,
         // "env": {
         //   // !MODIFY (or remove)
         //   "RUST_LOG": "info" // If you set this variable, check the VSCode console log window for the location of the log file.
@@ -52,7 +53,6 @@
         // },
         // "consoleLogLevel": "Console" //Info, Debug
       }
-
     ]
   }
   
